@@ -1,58 +1,39 @@
 import React from 'react';
-import Info from './compoents/info';
-import Form from './compoents/form';
-import Weather from './compoents/weather';
+import Info from './compoents/Info';
+import Form from './compoents/Form';
+import Weather from './compoents/Weather';
+import axios from 'axios'
 
 const API_KEY = 'd0506592bdc0b24fa1263b8464673a02';
 
 class App extends React.Component {
 
-    state = {
-        temp: undefined,
-        city: undefined,
-        country: undefined,
-        pressure: undefined,
-        sunset: undefined,
-        error: undefined
+    constructor(props) {
+        super(props);
+
+        this.state = {city: '', country: '', temp: '', pressure: '', error: ''};
+    }
+
+    getWeather  = () => {
+        axios.get(`http://api.openweathermap.org/data/2.5/weather?q=${this.state.city}&appid=${API_KEY}&units=metric`)
+            .then(({ data }) => this.updateSuccessfulState(data))
+            .catch(({ message }) => this.updateErrorState(message));
     };
 
-    gettingWeather = async (event) => {
-        event.preventDefault();
+    updateSuccessfulState({main: {temp, pressure}, sys: {country}}) {
+        this.setState({ temp, country, pressure, error: null });
+    }
 
-        const city = event.target.elements.city.value;
+    updateErrorState(error) {
+        this.setState({ error });
+    }
 
-        if (city) {
-            const api_url = await fetch(`http://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric`);
-            const data = await api_url.json();
-            console.log(data);
-
-            let sunset = data.sys.sunset;
-            let date = new Date();
-            date.setTime(sunset);
-            let sunset_date = date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
-
-            this.setState({
-                temp: data.main.temp,
-                city: data.name,
-                country: data.sys.country,
-                pressure: data.main.pressure,
-                sunset: sunset_date,
-                error: undefined
-            });
-        } else {
-            this.setState({
-                temp: undefined,
-                city: undefined,
-                country: undefined,
-                pressure: undefined,
-                sunset: undefined,
-                error: 'Please! Enter city name!'
-            });
-        }
-
-    };
+    updateCity = value => {
+        this.setState({city: value});
+    }
 
     render(){
+        const {city, temp, country, pressure, error} = this.state;
         return(
           <div className='wrapper'>
               <div className="main">
@@ -62,14 +43,13 @@ class App extends React.Component {
                               <Info />
                           </div>
                           <div className='col-sm-7 form'>
-                              <Form getWeather = {this.gettingWeather}/>
+                              <Form city = { city } updateCity = { this.updateCity } getWeather = {this.getWeather}/>
                               <Weather
-                                  temp = {this.state.temp}
-                                  city = {this.state.city}
-                                  country = {this.state.country}
-                                  pressure = {this.state.pressure}
-                                  sunset = {this.state.sunset}
-                                  error = {this.state.error}
+                                  temp = { temp }
+                                  city = { city }
+                                  country = { country }
+                                  pressure = { pressure }
+                                  error = { error }
                               />
                           </div>
                       </div>
